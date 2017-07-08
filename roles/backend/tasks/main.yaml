@@ -56,6 +56,13 @@
   notify:
     - restart mysql
 
+
+#Creating user for haproxy checks
+- mysql_user:
+    name: "{{  haproxy_mysql_user  }}"
+    host: "{{ groups.proxy[0] }}"
+    state: present
+
 #Configuring replication. We need a flag which shows us that "mysql_replication" has arleady done for this host. This operation should be running once for host. 
 
 - stat: path=/etc/mysql/repl.ansible
