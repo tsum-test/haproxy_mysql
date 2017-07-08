@@ -75,7 +75,7 @@
     master_host: "{{ groups.backend[1] }}"
     master_user: replicator
     master_password: "{{ mysql_password }}"
-  when: check_sql_path.stat.exists == false and '{{ inventory_hostname }}' == '{{ groups.backend[0] }}'  # It will be applied if there is no file at check_sql_path.
+  when: check_sql_path.stat.exists == false and  inventory_hostname  ==  groups.backend[0]   # It will be applied if there is no file at check_sql_path.
   notify:
     - restart mysql
 
@@ -86,14 +86,13 @@
    master_host: "{{ groups.backend[0] }}"
    master_user: replicator
    master_password: "{{ mysql_password }}"
-  when: check_sql_path.stat.exists == false and '{{ inventory_hostname }}' == '{{ groups.backend[1] }}'
+  when: check_sql_path.stat.exists == false and inventory_hostname  == groups.backend[1] 
   notify:
    - restart mysql
 
 # If both replications were configured correct, we'll create files on each backend.
 - command: touch /etc/mysql/repl.ansible
-  when: check_sql_path.stat.exists == false and '{{ inventory_hostname }}' == '{{ groups.backend[1] }}'
+  when: check_sql_path.stat.exists == false and inventory_hostname  ==  groups.backend[1] 
 
 - command: touch /etc/mysql/repl.ansible
-  when: check_sql_path.stat.exists == false and '{{ inventory_hostname }}' == '{{ groups.backend[1] }}'
-
+  when: check_sql_path.stat.exists == false and  inventory_hostname  ==  groups.backend[1]
