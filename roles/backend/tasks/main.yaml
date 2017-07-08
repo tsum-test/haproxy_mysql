@@ -95,7 +95,7 @@
   when: check_sql_path.stat.exists == false and inventory_hostname  ==  groups.backend[1] 
 
 - command: touch /etc/mysql/repl.ansible
-  when: check_sql_path.stat.exists == false and  inventory_hostname  ==  groups.backend[1]
+  when: check_sql_path.stat.exists == false and  inventory_hostname  ==  groups.backend[0]
 
 
 # Printing into stdout server id
