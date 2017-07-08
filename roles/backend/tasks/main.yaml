@@ -96,3 +96,15 @@
 
 - command: touch /etc/mysql/repl.ansible
   when: check_sql_path.stat.exists == false and  inventory_hostname  ==  groups.backend[1]
+
+
+# Printing into stdout server id
+
+- name: Retrieve stdout from mysql
+  shell:  mysql --batch --skip-column-names --execute="show variables like 'server_id'"
+  register: soutput
+  changed_when: False
+
+- name: Printing server-id to stdout
+  debug:
+    msg: "{{ soutput.stdout_lines }}"
