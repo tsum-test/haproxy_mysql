@@ -1,4 +1,5 @@
 ---
+# Installing necessary packages
 - apt:
     name="{{ item }}"
     state=latest
@@ -9,11 +10,17 @@
     - vim
     - git
     - ntp
+
+# Initializing template for my.cnf. Todo make it more dynamic
+
 - template:
     src: my.cnf.j2
     dest: /etc/mysql/my.cnf
   notify:
     - restart mysql
+
+# We need this file for ansible accessing to MySQL
+
 - fetch:
     src: /etc/mysql/debian.cnf
     flat: yes
@@ -23,6 +30,8 @@
    src: "/tmp/my.cnf.{{ ansible_hostname }}"
    dest: /root/.my.cnf
 
+# Creating mysql_user. Variables are defined in vars/main.yml
+
 - mysql_user:
     name: "{{ mysql_user }}"
     password: "{{ mysql_password }}"
@@ -30,9 +39,13 @@
     priv: '{{ mysql_user }}.*:ALL'
     state: present
 
+#Creating database
+
 - mysql_db:
    name: "{{ mysql_user }}"
    state: present
+
+#Creating user for replication
 
 - mysql_user:
     name: "replicator"
@@ -43,18 +56,24 @@
   notify:
     - restart mysql
 
+#Configuring replication. We need a flag which shows us that "mysql_replication" has arleady done for this host. This operation should be running once for host. 
+
 - stat: path=/etc/mysql/repl.ansible
   register: check_sql_path
 
+
+# Enabling mysql replictation on the first mysql server
 - mysql_replication:
     mode: changemaster
     master_host: "{{ groups.backend[1] }}"
     master_user: replicator
     master_password: "{{ mysql_password }}"
-  when: check_sql_path.stat.exists == false and '{{ inventory_hostname }}' == '{{ groups.backend[0] }}'
+  when: check_sql_path.stat.exists == false and '{{ inventory_hostname }}' == '{{ groups.backend[0] }}'  # It will be applied if there is no file at check_sql_path.
   notify:
     - restart mysql
 
+
+# Enabling mysql replictation on the first mysql server
 - mysql_replication:
    mode: changemaster
    master_host: "{{ groups.backend[0] }}"
@@ -64,6 +83,7 @@
   notify:
    - restart mysql
 
+# If both replications were configured correct, we'll create files on each backend.
 - command: touch /etc/mysql/repl.ansible
   when: check_sql_path.stat.exists == false and '{{ inventory_hostname }}' == '{{ groups.backend[1] }}'
 
