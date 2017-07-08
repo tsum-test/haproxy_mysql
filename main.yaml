@@ -2,3 +2,6 @@
 - hosts: backend
   roles:
     - role:  backend
+- hosts: proxy
+  roles:
+    - role: proxy
