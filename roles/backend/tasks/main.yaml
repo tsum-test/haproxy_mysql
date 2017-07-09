@@ -1,5 +1,17 @@
 ---
 # Installing necessary packages
+
+- name: Define sql_server_id for the First backend
+  set_fact:
+    sql_server_id: "1"
+  when: inventory_hostname  ==  groups.backend[0]
+
+- name: Define sql_server_id for the Second backend
+  set_fact:
+    sql_server_id: "2"
+  when: inventory_hostname  ==  groups.backend[1]
+
+
 - apt:
     name="{{ item }}"
     state=latest
