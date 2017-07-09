@@ -1,6 +1,6 @@
 ---
-# Installing necessary packages
-- apt:
+- name: Installing necessary packages
+  apt:
     name="{{ item }}"
     state=latest
     update_cache=yes
@@ -9,17 +9,15 @@
     - vim
     - git
     - ntp
-# Enabling haproxy service in /etc/default/haproxy
-
-- lineinfile:
+- name: Enabling haproxy service in /etc/default/haproxy
+  lineinfile:
     path: /etc/default/haproxy
     regexp: 'ENABLED=0'
     line: 'ENABLED=1'
     backrefs: yes
 
-#Configuring haproxy cfg from template
-
-- template:
+- name: Configuring haproxy cfg from template
+  template:
     src: haproxy.cfg.j2
     dest: /etc/haproxy/haproxy.cfg
   notify:

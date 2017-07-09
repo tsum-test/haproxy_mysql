@@ -1,5 +1,4 @@
 ---
-# Installing necessary packages
 
 - name: Define sql_server_id for the First backend
   set_fact:
@@ -11,8 +10,8 @@
     sql_server_id: "2"
   when: inventory_hostname  ==  groups.backend[1]
 
-
-- apt:
+- name:  Installing necessary packages
+  apt:
     name="{{ item }}"
     state=latest
     update_cache=yes
@@ -23,43 +22,41 @@
     - git
     - ntp
 
-# Initializing template for my.cnf. Todo make it more dynamic
 
-- template:
+- name:  Initializing template for my.cnf. Todo make it more dynamic
+  template:
     src: my.cnf.j2
     dest: /etc/mysql/my.cnf
   notify:
     - restart mysql
 
-# We need this file for ansible accessing to MySQL
 
-- fetch:
+- name:  We need this file for ansible accessing to MySQL. Fetching.
+  fetch:
     src: /etc/mysql/debian.cnf
     flat: yes
     dest: "/tmp/my.cnf.{{ ansible_hostname }}"
 
-- copy:
-   src: "/tmp/my.cnf.{{ ansible_hostname }}"
-   dest: /root/.my.cnf
+- name:  We need this file for ansible accessing to MySQL. Copying.
+  copy:
+    src: "/tmp/my.cnf.{{ ansible_hostname }}"
+    dest: /root/.my.cnf
 
-# Creating mysql_user. Variables are defined in vars/main.yml
-
-- mysql_user:
+- name:  Creating mysql_user. Variables are defined in vars/main.yml
+  mysql_user:
     name: "{{ mysql_user }}"
     password: "{{ mysql_password }}"
     host: "%"
     priv: '{{ mysql_user }}.*:ALL'
     state: present
 
-#Creating database
+- name: Creating database
+  mysql_db:
+    name: "{{ mysql_user }}"
+    state: present
 
-- mysql_db:
-   name: "{{ mysql_user }}"
-   state: present
-
-#Creating user for replication
-
-- mysql_user:
+- name: Creating user for replication
+  mysql_user:
     name: "replicator"
     host: "%"
     password: "{{ mysql_password }}"
@@ -69,20 +66,19 @@
     - restart mysql
 
 
-#Creating user for haproxy checks
-- mysql_user:
+- name: Creating user for haproxy checks
+  mysql_user:
     name: "{{  haproxy_mysql_user  }}"
     host: "{{ groups.proxy[0] }}"
     state: present
 
-#Configuring replication. We need a flag which shows us that "mysql_replication" has arleady done for this host. This operation should be running once for host. 
-
-- stat: path=/etc/mysql/repl.ansible
+- name: Configuring replication. We need a flag which shows us that "mysql_replication" has arleady done for this host. This operation should be running once for host. 
+  stat: path=/etc/mysql/repl.ansible
   register: check_sql_path
 
 
-# Enabling mysql replictation on the first mysql server
-- mysql_replication:
+- name: Enabling mysql replictation on the first mysql server
+  mysql_replication:
     mode: changemaster
     master_host: "{{ groups.backend[1] }}"
     master_user: replicator
@@ -92,25 +88,26 @@
     - restart mysql
 
 
-# Enabling mysql replictation on the first mysql server
-- mysql_replication:
-   mode: changemaster
-   master_host: "{{ groups.backend[0] }}"
-   master_user: replicator
-   master_password: "{{ mysql_password }}"
+- name: Enabling mysql replictation on the first mysql server
+  mysql_replication:
+    mode: changemaster
+    master_host: "{{ groups.backend[0] }}"
+    master_user: replicator
+    master_password: "{{ mysql_password }}"
   when: check_sql_path.stat.exists == false and inventory_hostname  == groups.backend[1] 
   notify:
    - restart mysql
 
-# If both replications were configured correct, we'll create files on each backend.
-- command: touch /etc/mysql/repl.ansible
+- name: If both replications were configured correct and there is no file, we'll create files on each backend. Creating for the first backend
+  command: touch /etc/mysql/repl.ansible
   when: check_sql_path.stat.exists == false and inventory_hostname  ==  groups.backend[1] 
 
-- command: touch /etc/mysql/repl.ansible
+- name: If both replications were configured correct and there is no file, we'll create files on each backend. Creating for the second backend
+  command: touch /etc/mysql/repl.ansible
   when: check_sql_path.stat.exists == false and  inventory_hostname  ==  groups.backend[0]
 
 
-# Printing into stdout server id
+#Printing into stdout server id
 
 - name: Retrieve stdout from mysql
   shell:  mysql --batch --skip-column-names --execute="show variables like 'server_id'"

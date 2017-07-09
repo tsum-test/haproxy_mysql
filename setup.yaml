@@ -1,11 +1,11 @@
 ---
-- hosts: backend
-  vars_files:
-    - "vars/main.yaml"
-  roles:
-    - role:  backend
 - hosts: proxy
   vars_files:
     - "vars/main.yaml"
   roles:
-    - role: proxy
+    - role:  proxy
+- hosts: backend
+  vars_files:
+    - "vars/main.yaml"
+  roles:
+    - role: backend
